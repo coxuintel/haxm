@@ -241,6 +241,9 @@ struct vcpu_t {
     //   first vCPU created by VM. If any vCPU sets features in this field, all
     //   vCPUs will change accordingly.
     hax_cpuid_t *guest_cpuid;
+#ifdef HAX_PLATFORM_WINDOWS
+    hax_perf_data perf[16];
+#endif
 };
 
 #define vmx(v, field) v->vmx.field

@@ -35,6 +35,9 @@
 #include <string.h>
 
 #include "hax_win.h"
+#include "hax_list.h"
+#include "vm.h"
+//#include "vcpu.h"
 
 // vcpu.h
 int vcpu_takeoff(struct vcpu_t *vcpu);
@@ -713,6 +716,31 @@ NTSTATUS HaxDeviceControl(PDEVICE_OBJECT DeviceObject,
             *((uint32_t *)outBuf) = vm_id;
             infret = sizeof(uint32_t);
             ret = STATUS_SUCCESS;
+            break;
+        case HAX_IOCTL_PROFILING:
+            int vm_id = *(int*)inBuf;
+            struct vm_t* vm = NULL;
+            vm = hax_get_vm(vm_id, 1);
+            if (!vm) {
+                ret = STATUS_INVALID_PARAMETER;
+            } else {
+                struct vcpu_t* vcpu = NULL;
+                hax_list_head* list;
+                LARGE_INTEGER total = { 0 };
+                uint64_t count = 0;
+                hax_mutex_lock(vm->vm_lock);
+                hax_list_for_each(list, (hax_list_head*)(&vm->vcpu_list)) {
+                    vcpu = hax_list_entry(vcpu_list, struct vcpu_t, list);
+                    total.QuadPart += vcpu->perf[0].total.QuadPart;
+                    count += vcpu->perf[0].count;
+                }
+                hax_mutex_unlock(vm->vm_lock);
+                hax_put_vm(vm);
+                ((hax_perf_data*)outBuf)->total.QuadPart = total.QuadPart;
+                ((hax_perf_data*)outBuf)->count = count;
+                infret = sizeof(hax_perf_data);
+                ret = STATUS_SUCCESS;
+            }
             break;
         default:
             ret = STATUS_INVALID_DEVICE_REQUEST;

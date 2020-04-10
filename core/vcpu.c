@@ -492,6 +492,10 @@ struct vcpu_t *vcpu_create(struct vm_t *vm, void *vm_host, int vcpu_id)
 
     // Initialize emulator
     vcpu_init_emulator(vcpu);
+#ifdef HAX_PLATFORM_WINDOWS
+    vcpu->perf[0].count = 0;
+    vcpu->perf[0].total.QuadPart = 0;
+#endif
 
     hax_log(HAX_LOGD, "vcpu %d is created.\n", vcpu->vcpu_id);
     return vcpu;

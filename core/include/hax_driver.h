@@ -59,6 +59,9 @@ struct hax_t {
     hax_mutex hax_lock;
     uint64_t mem_limit;
     uint64_t mem_quota;
+#ifdef HAX_PLATFORM_WINDOWS
+    LARGE_INTEGER qpf;
+#endif
 };
 
 uint64_t hax_get_memory_threshold(void);

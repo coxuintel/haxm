@@ -140,4 +140,9 @@ static inline void hax_smp_mb(void)
     KeMemoryBarrier();
 }
 
+typedef struct _hax_perf_data{
+    LARGE_INTEGER total;
+    uint32_t count;
+}hax_perf_data;
+
 #endif  // HAX_WINDOWS_HAX_TYPES_WINDOWS_H_

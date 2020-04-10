@@ -576,6 +576,11 @@ int hax_module_init(void)
     hax_pmu_init();
 
     hax_init_list_head(&hax->hax_vmlist);
+#ifdef HAX_PLATFORM_WINDOWS
+    LARGE_INTEGER qpf;
+    hax->qpf = KeQueryPerformanceCounter(&qpf);
+#endif
+
     hax_log(HAX_LOGW, "-------- HAXM v%s Start --------\n",
             HAXM_RELEASE_VERSION_STR);
 

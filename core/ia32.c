@@ -29,6 +29,8 @@
 */
 
 #include "include/ia32.h"
+#include "include/hax_driver.h"
+#include "include/cpu.h"
 
 struct qword_val {
     uint32_t low;
@@ -59,6 +61,12 @@ uint64_t ia32_rdmsr(uint32_t reg)
 
 void ia32_wrmsr(uint32_t reg, uint64_t val)
 {
+#ifdef HAX_PLATFORM_WINDOWS
+    struct per_cpu_data* cpu_data = current_cpu_data();
+    struct vcpu_t* vcpu = cpu_data->current_vcpu;
+    LARGE_INTEGER p1, p2, ElapsedMicroseconds;
+    p1 = KeQueryPerformanceCounter(&hax->qpf);
+#endif
 #ifdef HAX_ARCH_X86_32
     struct qword_val tmp = { 0 };
 
@@ -67,6 +75,18 @@ void ia32_wrmsr(uint32_t reg, uint64_t val)
     asm_wrmsr(reg, &tmp);
 #else
     asm_wrmsr(reg, val);
+#endif
+#ifdef HAX_PLATFORM_WINDOWS
+    p2 = KeQueryPerformanceCounter(&hax->qpf);
+    ElapsedMicroseconds.QuadPart = p2.QuadPart - p1.QuadPart;
+    ElapsedMicroseconds.QuadPart *= 1000000;
+    ElapsedMicroseconds.QuadPart /= hax->qpf.QuadPart;
+    if (vcpu->perf[0].count > ((uint32_t)(~0ULL) - 1)) {
+        vcpu->perf[0].count = 0;
+        vcpu->perf[0].total.QuadPart = 0;
+    }
+    vcpu->perf[0].total.QuadPart += ElapsedMicroseconds.QuadPart;
+    vcpu->perf[0].count++;
 #endif
 }
 
